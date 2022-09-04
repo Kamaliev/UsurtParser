@@ -1,3 +1,2 @@
-from .database import Database
-from .facultative import Facultative
+from .database import Database, Cursor, Connect
 from .schedule import Schedule

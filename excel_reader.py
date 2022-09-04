@@ -1,11 +1,9 @@
 import pandas as pd
-from database import Facultative, Schedule
+from database.schedule import Values
 
 
 def get_task(file: str):
     filename = file.split('/')[1]
-    print(file)
-    print(filename)
     if 'аспирантура' in filename.split(' '):
         return
     else:
@@ -14,8 +12,7 @@ def get_task(file: str):
         odd = 0
     else:
         odd = 1
-    schedule = Schedule()
-    fac_id = Facultative().get_id(*faculty)
+
     df = pd.read_excel(file)
     columns = list(df.columns)
     new_columns = list(df.iloc[1])
@@ -23,6 +20,7 @@ def get_task(file: str):
     df = df[2:]
     formatted_data(df, 'Часы')
     formatted_data(df, 'День')
+    clear_data = []
     for group in df.columns[2:]:
         for i, data in df['День'].items():
             time = df['Часы'][i]
@@ -34,7 +32,16 @@ def get_task(file: str):
                 continue
 
             date = data.split('\n')[0].split(' ')[0]
-            schedule.add(date, time, desc, fac_id, group, odd)
+            clear_data.append(
+                Values(
+                    time=time,
+                    weekday=date,
+                    desc=desc,
+                    group=group,
+                    odd=odd
+                )
+            )
+    return clear_data
 
 
 def formatted_data(df, column):

@@ -5,8 +5,7 @@ from typing import NamedTuple
 from bs4 import BeautifulSoup
 import requests
 import logging
-
-from database import Database, Schedule
+from database import Schedule
 from excel_reader import get_task
 
 logger = logging.getLogger('__main__')
@@ -69,13 +68,20 @@ def download(session: requests.Session):
 
 
 def main():
+    logger.info("Start")
+    db = Schedule()
     while True:
+        data = []
         s = requests.session()
         files = download(s)
-        Schedule().delete_all()
         for file in files:
-            get_task(file)
+            data += get_task(file)
 
+        logger.info(f'items: {len(data)}')
+        start = time.time()
+        db.add(data)
+        total = time.time() - start
+        logger.info(f'DB add items for {total}')
         time.sleep(3600 * 3)
 
 
