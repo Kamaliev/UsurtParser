@@ -1,16 +1,18 @@
 import logging
-from typing import NamedTuple
+from typing import NamedTuple, Union
 from database import Database
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('__main__')
 
 
 class Values(NamedTuple):
-    time: str
-    weekday: str
-    desc: str
-    group: str
-    odd: int
+    time: Union[str, None]
+    weekday: Union[str, None]
+    desc: Union[str, None]
+    group: Union[str, None]
+    odd: Union[int, None]
+    facultative: Union[str, None]
+    course: Union[int, None]
 
 
 class Schedule:
@@ -20,9 +22,10 @@ class Schedule:
         self.__db = Database()
 
     def add(self, data: list[Values]):
-        q = f'''insert into "Schedule"(time, "weekday", "desc", "group", odd) VALUES (%s, %s, %s, %s, %s)'''
+        logger.info('start add records')
+        q = f'''insert into "Schedule"("time", "weekday", "desc", "group", odd, facultative, course) VALUES %s on conflict("time", "weekday", "desc", "group") do nothing'''
         with self.__db.transaction() as cursor:
             cursor.execute('''delete from "Schedule" where id > 0''')
-            for row in data:
-                cursor.execute(q, row)
+            self.__db.execute_many(cursor, q, data)
+
 

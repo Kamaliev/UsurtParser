@@ -8,6 +8,7 @@ import logging
 from database import Schedule
 from excel_reader import get_task
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('__main__')
 
 
@@ -45,13 +46,13 @@ def _get_links(url: str, session: requests.Session):
 def _get_files(session: requests.Session):
     all_files = []
     folders = []
-    for i in ['https://bb.usurt.ru/webapps/cmsmain/webui/institution/Расписание/Очная форма обучения/Нечетная неделя',
-              'https://bb.usurt.ru/webapps/cmsmain/webui/institution/Расписание/Очная форма обучения/Четная неделя']:
+    target_schedule = [i for i in  _get_links('https://bb.usurt.ru/webapps/cmsmain/webui/institution/Расписание/Целевое обучение', session) if i.name.split(' ')[-3] == '(целевое).xlsx']
+    for i in ['https://bb.usurt.ru/webapps/cmsmain/webui/institution/Расписание/Очная форма обучения/Нечетная неделя','https://bb.usurt.ru/webapps/cmsmain/webui/institution/Расписание/Очная форма обучения/Четная неделя',]:
         folders += _get_links(i, session)
     for folder in folders:
         all_files += _get_links(domain + folder.link, session)
 
-    return all_files
+    return all_files + target_schedule
 
 
 def download(session: requests.Session):
@@ -75,8 +76,10 @@ def main():
         s = requests.session()
         files = download(s)
         for file in files:
-            data += get_task(file)
-
+            try:
+                data += get_task(file)
+            except Exception as e:
+                logger.error(e)
         logger.info(f'items: {len(data)}')
         start = time.time()
         db.add(data)
@@ -86,5 +89,4 @@ def main():
 
 
 if __name__ == '__main__':
-    print('Start')
     main()

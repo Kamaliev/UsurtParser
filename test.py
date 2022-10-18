@@ -1,14 +1,4 @@
-from database import Schedule
+import hashlib
 
 
-if __name__ == '__main__':
-    a = Schedule()
-
-    a.add(
-        '123',
-        '123',
-        '123',
-        '123',
-        '123',
-        '123',
-    )
+print(hashlib.md5('hfdbkm19'.encode('utf-8')).hexdigest())

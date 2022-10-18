@@ -3,8 +3,9 @@ import logging
 from utils import Singleton
 import psycopg2.pool
 import psycopg2.extensions
+import psycopg2.extras
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('__main__')
 
 
 class Connect:
@@ -12,11 +13,16 @@ class Connect:
         self.pool = poll
 
     def __enter__(self) -> psycopg2.extensions.connection:
-        self.con = self.pool.getconn()
+        self.con: psycopg2.extensions.connection = self.pool.getconn()
         return self.con
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.con:
+            if not self.con.autocommit:
+                if exc_val:
+                    self.con.rollback()
+                else:
+                    self.con.commit()
             self.pool.putconn(self.con)
 
 
@@ -41,7 +47,7 @@ class Database(metaclass=Singleton):
             host='usurt.site',
             port=5432,
             user='postgres',
-            password='123456',
+            password='117b8d835769d60f6dc76e4852c91f03',
             database='main'
         )
         self.pool = psycopg2.pool.SimpleConnectionPool(
@@ -58,19 +64,17 @@ class Database(metaclass=Singleton):
                 except psycopg2.Error as e:
                     logger.error(e)
 
+    @staticmethod
+    def execute_many(cursor, q, data):
+        psycopg2.extras.execute_values(cursor, q, data)
+
     @contextlib.contextmanager
     def transaction(self) -> psycopg2.extensions.cursor:
-        con = None
-        try:
-            with Connect(self.pool) as con:
-                con.autocommit = False
-                with Cursor(con) as cur:
-                    yield cur
-        except psycopg2.Error as e:
-            logger.error(e)
-            con.rollback()
-        else:
-            con.commit()
+        with Connect(self.pool) as con:
+            con.autocommit = False
+            with Cursor(con) as cur:
+                yield cur
+
 
 
 if __name__ == '__main__':
